@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>阳光彩虹小白马 · 单词养成</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(180deg,#fff5fb 0%,#eef6ff 40%,#f0fff8 100%);
+    min-height:100vh;color:#3d3561;overflow-x:hidden;padding-bottom:30px;
+  }
+  #app{max-width:540px;margin:0 auto;padding:0 16px}
+
+  .hud{
+    display:flex;gap:8px;justify-content:space-between;padding:14px 0 10px;
+    position:sticky;top:0;z-index:40;
+    background:linear-gradient(180deg,#fff5fb 70%,rgba(255,245,251,0));
+  }
+  .res{
+    flex:1;display:flex;align-items:center;justify-content:center;gap:4px;
+    background:#fff;border-radius:16px;padding:9px 4px;
+    box-shadow:0 3px 12px rgba(180,140,210,.14);
+    font-size:14px;font-weight:800;color:#6a5a9a;border:2px solid #ffe4f2;
+  }
+  .res span{font-size:16px}
+  .res b{font-variant-numeric:tabular-nums}
+  .res.bump{animation:bump .4s}
+  @keyframes bump{0%,100%{transform:scale(1)}40%{transform:scale(1.16)}}
+
+  .pet-card{
+    background:#fff;border-radius:28px;padding:18px 18px 20px;
+    box-shadow:0 8px 30px rgba(180,140,210,.18);
+    border:3px solid #ffe4f2;position:relative;margin-bottom:14px;
+  }
+  .pet-bubble{
+    position:absolute;top:-6px;left:50%;transform:translate(-50%,-100%) scale(.8);
+    background:#fff;border:3px solid #ffd6e8;border-radius:18px;
+    padding:9px 16px;font-size:14px;font-weight:800;color:#e8608a;
+    white-space:nowrap;opacity:0;transition:all .28s;pointer-events:none;
+    box-shadow:0 6px 18px rgba(232,96,138,.2);z-index:10;
+    max-width:90%;overflow:hidden;text-overflow:ellipsis;
+  }
+  .pet-bubble.show{opacity:1;transform:translate(-50%,-100%) scale(1)}
+  .pet-bubble::after{
+    content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
+    width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;
+    border-top:9px solid #ffd6e8;
+  }
+
+  .pet-area{
+    display:flex;align-items:center;justify-content:center;
+    height:196px;position:relative;margin-bottom:4px;
+  }
+  .pet-glow{
+    position:absolute;width:180px;height:180px;border-radius:50%;
+    transition:background .8s;animation:glow 3s ease-in-out infinite;
+  }
+  @keyframes glow{
+    0%,100%{transform:scale(1);opacity:.75}
+    50%{transform:scale(1.16);opacity:1}
+  }
+  .pet-rainbow{
+    position:absolute;width:200px;height:200px;border-radius:50%;
+    background:conic-gradient(from 0deg,#ff9ec7,#ffd06b,#a8e6a3,#7fd8ff,#c9a8ff,#ff9ec7);
+    opacity:0;transition:opacity .8s;
+    animation:rainbowSpin 8s linear infinite;
+    -webkit-mask:radial-gradient(circle,transparent 58%,#000 60%);
+    mask:radial-gradient(circle,transparent 58%,#000 60%);
+  }
+  @keyframes rainbowSpin{to{transform:rotate(360deg)}}
+  .pet-rainbow.on{opacity:.55}
+
+  .pet{
+    position:relative;z-index:2;line-height:1;
+    animation:float 3s ease-in-out infinite;
+    transition:font-size .6s cubic-bezier(.2,1.6,.5,1);
+    cursor:pointer;user-select:none;
+  }
+  @keyframes float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+  .pet.happy{animation:happyJump .6s ease}
+  @keyframes happyJump{
+    0%,100%{transform:translateY(0) scale(1)}
+    35%{transform:translateY(-30px) scale(1.2)}
+    70%{transform:translateY(0) scale(.95)}
+  }
+  .pet.sad{animation:sadShake .6s ease}
+  @keyframes sadShake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-10px) rotate(-8deg)}
+    40%{transform:translateX(10px) rotate(8deg)}
+    60%{transform:translateX(-8px) rotate(-6deg)}
+    80%{transform:translateX(8px) rotate(6deg)}
+  }
+  .pet.hungry{animation:float 3s ease-in-out infinite,hungryPulse 1.4s infinite}
+  @keyframes hungryPulse{50%{opacity:.55}}
+
+  .pet-title{
+    text-align:center;font-size:19px;font-weight:900;color:#6a5a9a;
+    margin-bottom:3px;letter-spacing:.3px;
+  }
+  .pet-desc{text-align:center;font-size:12.5px;font-weight:700;color:#b0a3d4;margin-bottom:14px}
+
+  .growth-wrap{margin-bottom:14px}
+  .growth-top{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12.5px;font-weight:800;color:#9b8ec4;margin-bottom:6px;
+  }
+  .growth-top .num{color:#8b5cf6;font-size:14px;font-weight:900}
+  .growth-bar{
+    height:18px;border-radius:12px;background:#f3edfb;overflow:hidden;
+    box-shadow:inset 0 2px 5px rgba(140,110,190,.12);position:relative;
+  }
+  .growth-fill{
+    height:100%;border-radius:12px;width:0%;
+    background:linear-gradient(90deg,#c4b5fd,#8b5cf6,#ff8fab);
+    transition:width .7s cubic-bezier(.2,1,.4,1);position:relative;
+  }
+  .growth-fill::after{
+    content:'';position:absolute;top:2px;left:6px;right:6px;height:5px;
+    border-radius:5px;background:rgba(255,255,255,.5);
+  }
+
+  .attr-list{display:flex;flex-direction:column;gap:10px}
+  .attr-row{display:flex;align-items:center;gap:8px}
+  .attr-name{width:70px;font-size:12px;font-weight:800;color:#9b8ec4;flex-shrink:0}
+  .attr-bar{
+    flex:1;height:13px;border-radius:9px;background:#f3edfb;overflow:hidden;
+    box-shadow:inset 0 2px 4px rgba(140,110,190,.1);
+  }
+  .attr-fill{height:100%;border-radius:9px;width:0%;transition:width .5s cubic-bezier(.2,1,.4,1)}
+  .attr-fill.hunger{background:linear-gradient(90deg,#ffd06b,#ff9f43)}
+  .attr-fill.hunger.low{background:linear-gradient(90deg,#ff6b6b,#ee5253)}
+  .attr-fill.mood{background:linear-gradient(90deg,#a8e6a3,#4ade80)}
+  .attr-fill.mood.low{background:linear-gradient(90deg,#94a3b8,#64748b)}
+  .attr-fill.bond{background:linear-gradient(90deg,#ff9ec7,#ff6ba6)}
+  .attr-num{width:44px;font-size:12px;font-weight:800;color:#9b8ec4;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums}
+
+  .actions{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px;margin-bottom:12px}
+  .action{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:14px 4px 12px;border-radius:20px;border:none;
+    font-family:inherit;cursor:pointer;transition:transform .16s,box-shadow .16s;
+  }
+  .action:active{transform:scale(.93)}
+  .action .icon{font-size:24px;line-height:1}
+  .action .t{font-size:12.5px;font-weight:900}
+  .action:disabled{opacity:.4;filter:grayscale(.5);cursor:not-allowed}
+  .action:disabled:active{transform:none}
+  .action.learn{background:linear-gradient(160deg,#a78bfa,#7c5cff);color:#fff;box-shadow:0 5px 16px rgba(124,92,255,.32)}
+  .action.feed{background:linear-gradient(160deg,#ffd06b,#ff9f43);color:#8a4b00;box-shadow:0 5px 16px rgba(255,159,67,.32)}
+  .action.play{background:linear-gradient(160deg,#ffb3d1,#ff6ba6);color:#fff;box-shadow:0 5px 16px rgba(255,107,166,.3)}
+  .action.bank{background:linear-gradient(160deg,#7fd8ff,#3aaff5);color:#fff;box-shadow:0 5px 16px rgba(58,175,245,.3)}
+
+  .tip{text-align:center;font-size:12px;color:#a99cc9;line-height:1.7;padding:0 8px;margin-bottom:10px}
+  .tip b{color:#8b5cf6}
+  .tip .warn{color:#dc2626}
+
+  .save-status{
+    text-align:center;font-size:11.5px;font-weight:800;color:#a99cc9;
+    padding:8px 0 0;letter-spacing:.3px;
+  }
+  .save-status.saving{color:#8b5cf6}
+  .save-status.error{color:#dc2626}
+
+  .overlay{
+    position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+    padding:14px;background:rgba(70,50,110,.45);backdrop-filter:blur(6px);
+    opacity:0;pointer-events:none;transition:opacity .25s;
+  }
+  .overlay.show{opacity:1;pointer-events:auto}
+  .overlay.hidden{display:none}
+
+  .panel{
+    width:100%;max-width:440px;max-height:92vh;overflow-y:auto;
+    background:#fff;border-radius:28px;padding:20px;
+    box-shadow:0 24px 60px rgba(90,60,150,.3);border:3px solid #ffe4f2;
+    transform:scale(.92);transition:transform .28s cubic-bezier(.2,1.4,.5,1);
+    -webkit-overflow-scrolling:touch;
+  }
+  .overlay.show .panel{transform:scale(1)}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px}
+  .panel-title{font-size:17px;font-weight:900;color:#6a5a9a}
+  .close{
+    width:34px;height:34px;border-radius:50%;border:none;background:#f5eefc;
+    color:#9b8ec4;font-size:15px;font-weight:900;cursor:pointer;flex-shrink:0;
+  }
+  .close:hover{background:#ede0fa}
+
+  .setup-intro{
+    text-align:center;font-size:13px;font-weight:700;color:#a99cc9;
+    margin-bottom:16px;line-height:1.6;
+  }
+  .setup-intro b{color:#8b5cf6}
+  .count-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .count-btn{
+    position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:16px 8px 14px;border-radius:20px;
+    border:3px solid #f0e9fa;background:#faf7ff;
+    font-family:inherit;cursor:pointer;transition:all .16s;
+  }
+  .count-btn:active{transform:scale(.95)}
+  .count-btn .n{font-size:26px;font-weight:900;color:#8b5cf6;line-height:1;font-variant-numeric:tabular-nums}
+  .count-btn .lbl{font-size:11.5px;font-weight:800;color:#b0a3d4}
+  .count-btn:hover{border-color:#c9b6ff;background:#f3edfb}
+  .count-btn.selected{
+    border-color:#8b5cf6;background:linear-gradient(160deg,#f3edfb,#e9dcfa);
+    box-shadow:0 6px 18px rgba(139,92,246,.22);
+  }
+  .count-btn.selected .n{color:#6a5a9a}
+  .count-btn .rec{
+    position:absolute;top:-8px;right:8px;font-size:10px;font-weight:900;
+    background:linear-gradient(135deg,#ffb347,#ff8fab);color:#fff;
+    padding:2px 8px;border-radius:10px;
+  }
+
+  .stat-preview{
+    display:flex;justify-content:space-around;
+    background:#faf7ff;border:2px solid #f0e9fa;border-radius:16px;
+    padding:12px 8px;margin-bottom:16px;
+  }
+  .stat-preview .item{text-align:center}
+  .stat-preview .v{font-size:17px;font-weight:900;color:#8b5cf6}
+  .stat-preview .k{font-size:11px;font-weight:700;color:#b0a3d4;margin-top:2px}
+
+  .progress-wrap{margin-bottom:14px}
+  .progress-info{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12.5px;font-weight:800;color:#9b8ec4;margin-bottom:6px;
+  }
+  .progress-info b{color:#8b5cf6;font-size:14px}
+  .progress-info .right{color:#16a34a}
+  .progress-info .wrong{color:#dc2626;margin-left:8px}
+  .progress-bar{height:10px;border-radius:8px;background:#f3edfb;overflow:hidden}
+  .progress-fill{
+    height:100%;border-radius:8px;width:0%;
+    background:linear-gradient(90deg,#c4b5fd,#8b5cf6,#ff8fab);
+    transition:width .4s cubic-bezier(.2,1,.4,1);
+  }
+
+  .q-type{
+    display:inline-block;font-size:12px;font-weight:900;letter-spacing:.5px;
+    background:linear-gradient(135deg,#e0d4ff,#c9b6ff);
+    color:#5a4a8a;padding:6px 13px;border-radius:13px;
+  }
+  .q-streak{font-size:13px;font-weight:900;color:#ff8c42;margin-left:auto;margin-right:6px}
+
+  .q-word{
+    text-align:center;font-size:38px;font-weight:900;color:#5a4a8a;
+    letter-spacing:-.5px;margin:4px 0 6px;word-break:break-word;line-height:1.2;
+  }
+  .q-word.small{font-size:28px}
+  .q-sub{text-align:center;font-size:13px;font-weight:700;color:#b0a3d4;margin-bottom:20px}
+  .q-hint{text-align:center;font-size:13.5px;font-weight:800;color:#9b8ec4;margin-bottom:16px;line-height:1.5}
+
+  .q-play{
+    display:flex;align-items:center;justify-content:center;
+    width:106px;height:106px;border-radius:50%;margin:4px auto 20px;
+    font-size:46px;border:none;cursor:pointer;
+    background:radial-gradient(circle at 35% 30%,#a78bfa,#7c5cff);
+    color:#fff;animation:pulseRing 1.8s infinite;transition:transform .15s;
+  }
+  .q-play:active{transform:scale(.92)}
+  @keyframes pulseRing{
+    0%{box-shadow:0 0 0 0 rgba(124,92,255,.45),0 10px 26px rgba(124,92,255,.35)}
+    70%{box-shadow:0 0 0 20px rgba(124,92,255,0),0 10px 26px rgba(124,92,255,.35)}
+    100%{box-shadow:0 0 0 0 rgba(124,92,255,0),0 10px 26px rgba(124,92,255,.35)}
+  }
+
+  .q-input{
+    width:100%;padding:15px 16px;font-size:22px;font-weight:800;
+    letter-spacing:1.5px;text-align:center;border-radius:18px;
+    border:3px solid #e9dcfa;background:#faf7ff;color:#5a4a8a;
+    font-family:inherit;outline:none;margin-bottom:12px;transition:border-color .2s,box-shadow .2s;
+  }
+  .q-input:focus{border-color:#a78bfa;box-shadow:0 0 0 4px rgba(167,139,250,.18)}
+  .q-input::placeholder{color:#c4b8e0;font-size:14px;font-weight:700;letter-spacing:0}
+
+  .q-options{display:flex;flex-direction:column;gap:10px}
+  .q-opt{
+    display:flex;align-items:center;gap:10px;width:100%;
+    padding:14px 15px;border-radius:18px;background:#faf7ff;
+    border:3px solid #f0e9fa;color:#5a4a8a;font-size:16px;
+    font-weight:800;font-family:inherit;text-align:left;cursor:pointer;
+    transition:all .15s;word-break:break-word;
+  }
+  .q-opt:hover:not(:disabled){background:#f3edfb;border-color:#c9b6ff;transform:translateX(4px)}
+  .q-opt:disabled{cursor:default}
+  .q-opt .key{
+    display:flex;align-items:center;justify-content:center;
+    width:26px;height:26px;border-radius:9px;flex-shrink:0;
+    background:#e9dcfa;color:#7c5cff;font-size:13px;font-weight:900;
+  }
+  .q-opt.correct{background:#e4fbee;border-color:#4ade80;color:#15803d}
+  .q-opt.correct .key{background:#4ade80;color:#fff}
+  .q-opt.wrong{background:#ffe9e9;border-color:#ff6b6b;color:#c92a2a}
+  .q-opt.wrong .key{background:#ff6b6b;color:#fff}
+  .q-opt.spell{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.5px}
+
+  .q-feedback{
+    margin-top:15px;text-align:center;font-size:14.5px;
+    font-weight:800;line-height:1.8;min-height:46px;
+  }
+  .q-feedback.ok{color:#16a34a}
+  .q-feedback.bad{color:#dc2626}
+  .q-feedback .small{font-size:12px;font-weight:700;color:#a99cc9;display:block;margin-top:3px}
+  .q-feedback .ans{
+    display:inline-block;font-family:ui-monospace,monospace;
+    font-size:19px;color:#5a4a8a;background:#f3edfb;
+    border:2px solid #d9c9ff;padding:2px 12px;border-radius:10px;
+    margin:3px 0;letter-spacing:1px;
+  }
+
+  .btn-primary{
+    width:100%;padding:15px;border-radius:20px;border:none;
+    background:linear-gradient(135deg,#c4b5fd,#8b5cf6,#ff8fab);color:#fff;
+    font-family:inherit;font-size:16px;font-weight:900;cursor:pointer;
+    box-shadow:0 8px 22px rgba(139,92,246,.35);transition:transform .15s;
+    position:relative;z-index:5;
+  }
+  .btn-primary:active{transform:scale(.95)}
+
+  .summary-panel{
+    width:100%;max-width:420px;max-height:92vh;overflow-y:auto;
+    background:linear-gradient(170deg,#fff8fc,#f4edff);
+    border-radius:30px;padding:24px 20px 20px;
+    box-shadow:0 24px 60px rgba(90,60,150,.35);border:4px solid #ffe4f2;
+    text-align:center;transform:scale(.9);
+    transition:transform .35s cubic-bezier(.2,1.6,.5,1);
+  }
+  .overlay.show .summary-panel{transform:scale(1)}
+
+  .summary-emoji{
+    font-size:62px;line-height:1;
+    animation:sumPop .7s cubic-bezier(.2,1.8,.4,1);
+    filter:drop-shadow(0 8px 18px rgba(255,180,60,.5));
+  }
+  @keyframes sumPop{
+    0%{transform:scale(.3) rotate(-25deg);opacity:0}
+    60%{transform:scale(1.2) rotate(8deg);opacity:1}
+    100%{transform:scale(1) rotate(0)}
+  }
+  .summary-title{
+    font-size:22px;font-weight:900;margin:12px 0 4px;
+    background:linear-gradient(90deg,#8b5cf6,#ff6ba6);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .summary-sub{font-size:12.5px;font-weight:700;color:#b0a3d4;margin-bottom:18px}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}
+  .stat-box{
+    background:#fff;border-radius:16px;padding:12px 4px;
+    border:2px solid #f0e9fa;
+  }
+  .stat-box .v{font-size:22px;font-weight:900;color:#8b5cf6;line-height:1;font-variant-numeric:tabular-nums}
+  .stat-box .v.green{color:#16a34a}
+  .stat-box .v.red{color:#dc2626}
+  .stat-box .k{font-size:11px;font-weight:700;color:#b0a3d4;margin-top:4px}
+
+  .extra-row{display:flex;gap:9px;margin-bottom:16px}
+  .extra-item{
+    flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+    background:#fff;border:2px solid #f0e9fa;border-radius:14px;
+    padding:9px 6px;font-size:11.5px;font-weight:800;color:#9b8ec4;
+  }
+  .extra-item b{color:#8b5cf6;font-size:15px;font-weight:900}
+
+  .reward-box{
+    background:linear-gradient(160deg,#fff5e6,#ffe9f4);
+    border:3px dashed #ffd6a8;border-radius:20px;
+    padding:14px 12px 12px;margin-bottom:12px;
+  }
+  .reward-title{font-size:12.5px;font-weight:900;color:#c98a1e;letter-spacing:1.5px;margin-bottom:10px}
+  .reward-list{display:flex;gap:10px;justify-content:center;margin-bottom:10px;flex-wrap:wrap}
+  .reward-chip{
+    display:flex;align-items:center;gap:5px;
+    padding:9px 16px;border-radius:16px;
+    font-size:16px;font-weight:900;
+    animation:chipIn .5s cubic-bezier(.2,1.6,.5,1) backwards;
+  }
+  .reward-chip.growth{background:#fff;color:#8b5cf6;box-shadow:0 4px 14px rgba(139,92,246,.2)}
+  .reward-chip.food{background:#fff;color:#e07c1a;box-shadow:0 4px 14px rgba(224,124,26,.2);animation-delay:.08s}
+  .reward-chip.coin{background:#fff;color:#d4a017;box-shadow:0 4px 14px rgba(212,160,23,.2);animation-delay:.16s}
+  @keyframes chipIn{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+
+  .reward-breakdown{
+    font-size:11.5px;font-weight:700;color:#c98a1e;line-height:1.7;
+    background:rgba(255,255,255,.65);border-radius:10px;padding:8px 10px;
+    text-align:left;
+  }
+  .reward-breakdown .line{display:flex;justify-content:space-between;gap:8px}
+  .reward-breakdown .line span:last-child{font-weight:900;color:#8b5cf6;white-space:nowrap}
+  .reward-breakdown .eff{
+    margin-top:5px;padding-top:5px;border-top:1px dashed #ffd6a8;
+    color:#dc2626;
+  }
+
+  .penalty-box{
+    display:flex;align-items:center;gap:10px;
+    background:linear-gradient(160deg,#ffe9e9,#ffdede);
+    border:3px dashed #ff9b9b;border-radius:18px;
+    padding:11px 14px;margin-bottom:16px;
+    animation:penaltyIn .5s cubic-bezier(.2,1.6,.5,1);
+  }
+  @keyframes penaltyIn{
+    0%{transform:scale(.7);opacity:0}
+    70%{transform:scale(1.05)}
+    100%{transform:scale(1);opacity:1}
+  }
+  .penalty-icon{font-size:24px;flex-shrink:0}
+  .penalty-text{flex:1;text-align:left;font-size:12px;font-weight:800;color:#c92a2a;line-height:1.4}
+  .penalty-text small{display:block;color:#a83232;font-weight:700;font-size:10.5px;margin-top:2px}
+  .penalty-value{
+    font-size:19px;font-weight:900;color:#dc2626;flex-shrink:0;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .evolve-panel{
+    width:100%;max-width:380px;background:linear-gradient(165deg,#fff6fb,#f2ebff);
+    border-radius:32px;padding:32px 24px 26px;text-align:center;
+    position:relative;overflow:hidden;box-shadow:0 24px 70px rgba(120,80,200,.4);
+    border:4px solid #ffd9ec;transform:scale(.85);
+    transition:transform .4s cubic-bezier(.2,1.6,.5,1);
+  }
+  .overlay.show .evolve-panel{transform:scale(1)}
+
+  .evolve-light{
+    position:absolute;top:50%;left:50%;width:400px;height:400px;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,220,120,.75),rgba(255,220,120,0) 65%);
+    animation:evolveSpin 3s linear infinite;
+    pointer-events:none;
+    z-index:1;
+  }
+  @keyframes evolveSpin{
+    from{transform:translate(-50%,-50%) scale(.7);opacity:.4}
+    50%{transform:translate(-50%,-50%) scale(1.1);opacity:1}
+    to{transform:translate(-50%,-50%) scale(.7);opacity:.4}
+  }
+  .evolve-pet{
+    font-size:110px;line-height:1;position:relative;z-index:2;
+    animation:evolvePop 1s cubic-bezier(.2,1.8,.4,1);
+    filter:drop-shadow(0 12px 26px rgba(255,180,60,.6));
+  }
+  @keyframes evolvePop{
+    0%{transform:scale(.3) rotate(-30deg);opacity:0}
+    60%{transform:scale(1.25) rotate(8deg);opacity:1}
+    100%{transform:scale(1) rotate(0)}
+  }
+  .evolve-title{
+    font-size:25px;font-weight:900;margin:16px 0 6px;position:relative;z-index:2;
+    background:linear-gradient(90deg,#8b5cf6,#ff6ba6);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .evolve-name{font-size:17px;font-weight:900;color:#9b8ec4;margin-bottom:6px;position:relative;z-index:2}
+  .evolve-desc{
+    font-size:12.5px;font-weight:700;color:#b0a3d4;margin-bottom:22px;
+    position:relative;z-index:2;line-height:1.6;
+  }
+  .evolve-panel .btn-primary{position:relative;z-index:10}
+
+  .bank-tabs{
+    display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:12px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  .bank-tabs::-webkit-scrollbar{display:none}
+  .bank-tab{
+    flex-shrink:0;padding:8px 14px;border-radius:14px;border:2px solid #f0e9fa;
+    background:#faf7ff;color:#9b8ec4;font-size:12.5px;font-weight:800;
+    font-family:inherit;cursor:pointer;transition:all .15s;white-space:nowrap;
+  }
+  .bank-tab.active{background:linear-gradient(135deg,#c4b5fd,#8b5cf6);color:#fff;border-color:transparent}
+
+  .bank-list{display:flex;flex-direction:column;gap:7px;max-height:48vh;overflow-y:auto;padding-right:4px}
+  .bank-item{
+    display:flex;align-items:center;gap:10px;
+    background:#faf7ff;border:2px solid #f3edfb;border-radius:14px;padding:10px 13px;
+  }
+  .bank-en{font-size:14.5px;font-weight:900;color:#5a4a8a;flex-shrink:0;min-width:96px;word-break:break-word}
+  .bank-zh{font-size:12.5px;font-weight:700;color:#b0a3d4;flex:1;word-break:break-word}
+  .stars{display:flex;gap:2px;flex-shrink:0}
+  .star{width:9px;height:9px;border-radius:50%;background:#e9dcfa}
+  .star.on{background:linear-gradient(135deg,#ffd06b,#ff9f43)}
+  .star.full{background:linear-gradient(135deg,#ff6ba6,#ff4d94)}
+
+  .add-btn{
+    width:100%;padding:13px;border-radius:18px;border:2px dashed #c9b6ff;
+    background:#faf7ff;color:#8b5cf6;font-family:inherit;
+    font-size:14px;font-weight:900;cursor:pointer;margin-top:12px;
+    transition:all .15s;
+  }
+  .add-btn:hover{background:#f3edfb;border-style:solid}
+
+  .form-group{margin-bottom:13px}
+  .form-group label{display:block;font-size:12.5px;font-weight:800;color:#9b8ec4;margin-bottom:6px}
+  .form-input{
+    width:100%;padding:12px 14px;border-radius:14px;border:2px solid #e9dcfa;
+    background:#faf7ff;color:#5a4a8a;font-family:inherit;font-size:15px;
+    font-weight:700;outline:none;transition:border-color .2s;
+  }
+  .form-input:focus{border-color:#a78bfa}
+  .form-input::placeholder{color:#c4b8e0;font-weight:600}
+  .cat-select{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+  .cat-chip{
+    padding:7px 12px;border-radius:12px;border:2px solid #f0e9fa;
+    background:#faf7ff;color:#9b8ec4;font-size:12px;font-weight:800;
+    cursor:pointer;transition:all .15s;font-family:inherit;
+  }
+  .cat-chip.active{background:linear-gradient(135deg,#c4b5fd,#8b5cf6);color:#fff;border-color:transparent}
+
+  .float-reward{
+    position:fixed;z-index:999;font-size:22px;font-weight:900;
+    pointer-events:none;color:#ff8c42;text-shadow:0 2px 8px rgba(255,140,66,.4);
+    animation:floatUp 1.4s ease-out forwards;transform:translateX(-50%);
+  }
+  @keyframes floatUp{
+    0%{opacity:0;transform:translate(-50%,0) scale(.6)}
+    20%{opacity:1;transform:translate(-50%,-20px) scale(1.2)}
+    100%{opacity:0;transform:translate(-50%,-90px) scale(1)}
+  }
+
+  .toast{
+    position:fixed;left:50%;bottom:60px;z-index:999;
+    transform:translate(-50%,20px);background:rgba(106,90,154,.96);
+    color:#fff;padding:12px 24px;border-radius:30px;font-size:14px;
+    font-weight:800;opacity:0;pointer-events:none;transition:all .3s;
+    max-width:86vw;text-align:center;box-shadow:0 10px 30px rgba(106,90,154,.4);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.danger{background:rgba(200,60,60,.96);box-shadow:0 10px 30px rgba(200,60,60,.4)}
+
+  .empty-tip{text-align:center;padding:30px 10px;color:#b0a3d4;font-size:13.5px;font-weight:700}
+
+  @media (max-width:400px){
+    .pet-area{height:170px}
+    .q-word{font-size:31px}
+    .action .icon{font-size:21px}
+    .action .t{font-size:11.5px}
+    .bank-en{min-width:82px;font-size:13.5px}
+    .stat-box .v{font-size:19px}
+    .count-btn .n{font-size:23px}
+    .attr-name{width:62px;font-size:11.5px}
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="hud">
+    <div class="res" id="resGrowth"><span>⭐</span><b id="growthNum">0</b></div>
+    <div class="res" id="resFood"><span>🍖</span><b id="foodNum">0</b></div>
+    <div class="res" id="resCoin"><span>🪙</span><b id="coinNum">0</b></div>
+  </header>
+
+  <section class="pet-card">
+    <div class="pet-bubble" id="petBubble"></div>
+    <div class="pet-area">
+      <div class="pet-rainbow" id="petRainbow"></div>
+      <div class="pet-glow" id="petGlow"></div>
+      <div class="pet" id="petEmoji">🥚</div>
+    </div>
+    <h2 class="pet-title" id="petName">彩虹马蛋</h2>
+    <p class="pet-desc" id="petDesc">里面好像有彩虹在流动…</p>
+
+    <div class="growth-wrap">
+      <div class="growth-top">
+        <span>成长值</span>
+        <span><span class="num" id="growNow">0</span> / <span id="growTarget">30</span></span>
+      </div>
+      <div class="growth-bar"><div class="growth-fill" id="growthFill"></div></div>
+    </div>
+
+    <div class="attr-list">
+      <div class="attr-row">
+        <span class="attr-name">🍖 饱食</span>
+        <div class="attr-bar"><div class="attr-fill hunger" id="hungerFill"></div></div>
+        <span class="attr-num" id="hungerNum">100%</span>
+      </div>
+      <div class="attr-row">
+        <span class="attr-name">😊 心情</span>
+        <div class="attr-bar"><div class="attr-fill mood" id="moodFill"></div></div>
+        <span class="attr-num" id="moodNum">100%</span>
+      </div>
+      <div class="attr-row">
+        <span class="attr-name">💖 亲密</span>
+        <div class="attr-bar"><div class="attr-fill bond" id="bondFill"></div></div>
+        <span class="attr-num" id="bondNum">0%</span>
+      </div>
+    </div>
+  </section>
+
+  <nav class="actions">
+    <button class="action learn" id="btnLearn"><span class="icon">📚</span><span class="t">学习</span></button>
+    <button class="action feed" id="btnFeed"><span class="icon">🍖</span><span class="t">喂食</span></button>
+    <button class="action play" id="btnPlay"><span class="icon">🎾</span><span class="t">玩耍</span></button>
+    <button class="action bank" id="btnBank"><span class="icon">📖</span><span class="t">词库</span></button>
+  </nav>
+
+  <p class="tip">
+    💡 答对题目获得 <b>⭐成长值</b>，小白马会一步步进化<br>
+    已答对的单词会越来越少见 · 答错的单词会优先出现帮你巩固
+  </p>
+  <div class="save-status" id="saveStatus">💾 数据已自动保存</div>
+</div>
+
+<div class="overlay hidden" id="setupOverlay">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">📚 本轮学多少？</span>
+      <button class="close" id="btnCloseSetup">✕</button>
+    </div>
+    <p class="setup-intro">
+      当前词库共 <b id="setupTotal">0</b> 个单词<br>
+      选一个数量，学完统一结算成长值～
+    </p>
+    <div class="count-grid" id="countGrid"></div>
+    <div class="stat-preview">
+      <div class="item"><div class="v" id="setupMastered">0</div><div class="k">已掌握</div></div>
+      <div class="item"><div class="v" id="setupStreak">0</div><div class="k">当前连击</div></div>
+      <div class="item"><div class="v" id="setupHunger">100%</div><div class="k">小白马饱食</div></div>
+    </div>
+    <button class="btn-primary" id="btnStartSession" disabled>开始学习</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="quizOverlay">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="q-type" id="qType">看词选义</span>
+      <span class="q-streak" id="qStreak"></span>
+      <button class="close" id="btnCloseQuiz">✕</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span>第 <b id="progCur">1</b> / <b id="progTotal">10</b> 题</span>
+        <span>
+          <span class="right">✅ <b id="progRight">0</b></span>
+          <span class="wrong">❌ <b id="progWrong">0</b></span>
+        </span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+    </div>
+    <div id="quizContent"></div>
+    <div class="q-feedback" id="qFeedback"></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="summaryOverlay">
+  <div class="summary-panel">
+    <div class="summary-emoji" id="sumEmoji">🎉</div>
+    <div class="summary-title" id="sumTitle">本轮完成！</div>
+    <div class="summary-sub" id="sumSub">小白马又长大了一点～</div>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="v green" id="sumCorrect">0</div><div class="k">答对</div></div>
+      <div class="stat-box"><div class="v red" id="sumWrong">0</div><div class="k">答错</div></div>
+      <div class="stat-box"><div class="v" id="sumAcc">0%</div><div class="k">正确率</div></div>
+    </div>
+
+    <div class="extra-row">
+      <div class="extra-item">🔥 最高连击 <b id="sumStreak">0</b></div>
+      <div class="extra-item">🌟 新掌握 <b id="sumMastered">0</b></div>
+    </div>
+
+    <div class="reward-box">
+      <div class="reward-title">本 轮 奖 励</div>
+      <div class="reward-list">
+        <div class="reward-chip growth">⭐ +<span id="sumGrowth">0</span></div>
+        <div class="reward-chip food">🍖 +<span id="sumFood">0</span></div>
+        <div class="reward-chip coin">🪙 +<span id="sumCoin">0</span></div>
+      </div>
+      <div class="reward-breakdown" id="sumBreakdown"></div>
+    </div>
+
+    <div class="penalty-box" id="penaltyBox" style="display:none">
+      <div class="penalty-icon">⚠️</div>
+      <div class="penalty-text" id="penaltyText">错误率过高</div>
+      <div class="penalty-value">-⭐ <span id="penaltyValue">0</span></div>
+    </div>
+
+    <button class="btn-primary" id="btnClaim">收下奖励 🎁</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="evolveOverlay">
+  <div class="evolve-panel" id="evolvePanel">
+    <div class="evolve-light"></div>
+    <div class="evolve-pet" id="evolvePet">🐴</div>
+    <div class="evolve-title">✨ 进 化 啦 ✨</div>
+    <div class="evolve-name" id="evolveName">初生小马</div>
+    <div class="evolve-desc" id="evolveDesc">刚刚来到世界的小马驹</div>
+    <button type="button" class="btn-primary" id="btnEvolveOk">太棒了！</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="bankOverlay">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">📖 我的词库</span>
+      <button class="close" id="btnCloseBank">✕</button>
+    </div>
+    <div class="bank-tabs" id="bankTabs"></div>
+    <div class="bank-list" id="bankList"></div>
+    <button class="add-btn" id="btnAddWord">＋ 添加自定义单词</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="addOverlay">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">✏️ 添加新单词</span>
+      <button class="close" id="btnCloseAdd">✕</button>
+    </div>
+    <div class="form-group">
+      <label>英文单词</label>
+      <input class="form-input" id="inEn" placeholder="例如：apple" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div class="form-group">
+      <label>中文释义</label>
+      <input class="form-input" id="inZh" placeholder="例如：苹果" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>选择分类</label>
+      <div class="cat-select" id="catSelect"></div>
+    </div>
+    <button class="btn-primary" id="btnSaveWord">保存单词</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ===================== 内置词库 ===================== */
+  const WORD_BANK = {
+    '🐾 动物': 'cat|猫,dog|狗,bird|鸟,fish|鱼,pig|猪,cow|奶牛,duck|鸭子,hen|母鸡,rabbit|兔子,horse|马,sheep|绵羊,monkey|猴子,tiger|老虎,lion|狮子,elephant|大象,panda|熊猫,bear|熊,wolf|狼,fox|狐狸,deer|鹿,mouse|老鼠,snake|蛇,frog|青蛙,bee|蜜蜂,ant|蚂蚁,butterfly|蝴蝶,chicken|小鸡,goat|山羊,giraffe|长颈鹿,zebra|斑马,dolphin|海豚,whale|鲸鱼,shark|鲨鱼,turtle|乌龟,penguin|企鹅',
+    '🍎 食物': 'apple|苹果,banana|香蕉,orange|橙子,pear|梨,peach|桃子,grape|葡萄,watermelon|西瓜,strawberry|草莓,lemon|柠檬,mango|芒果,bread|面包,cake|蛋糕,milk|牛奶,water|水,juice|果汁,tea|茶,coffee|咖啡,rice|米饭,noodle|面条,egg|鸡蛋,meat|肉,soup|汤,salad|沙拉,sandwich|三明治,hamburger|汉堡,pizza|披萨,candy|糖果,chocolate|巧克力,biscuit|饼干,jam|果酱,honey|蜂蜜,cheese|奶酪,potato|土豆,tomato|西红柿',
+    '🎨 颜色': 'red|红色,orange|橙色,yellow|黄色,green|绿色,blue|蓝色,purple|紫色,pink|粉色,brown|棕色,black|黑色,white|白色,gray|灰色,gold|金色,silver|银色',
+    '🔢 数字': 'one|一,two|二,three|三,four|四,five|五,six|六,seven|七,eight|八,nine|九,ten|十,eleven|十一,twelve|十二,thirteen|十三,fourteen|十四,fifteen|十五,sixteen|十六,seventeen|十七,eighteen|十八,nineteen|十九,twenty|二十,thirty|三十,forty|四十,fifty|五十,hundred|一百,thousand|一千',
+    '👤 身体': 'head|头,hair|头发,face|脸,eye|眼睛,ear|耳朵,nose|鼻子,mouth|嘴巴,tooth|牙齿,tongue|舌头,neck|脖子,shoulder|肩膀,arm|手臂,hand|手,finger|手指,leg|腿,foot|脚,knee|膝盖,back|背,heart|心脏,body|身体',
+    '👨‍👩‍👧 家庭': 'father|爸爸,mother|妈妈,brother|兄弟,sister|姐妹,grandpa|爷爷,grandma|奶奶,uncle|叔叔,aunt|阿姨,cousin|表兄弟姐妹,son|儿子,daughter|女儿,baby|婴儿,family|家庭,parent|父母,friend|朋友,boy|男孩,girl|女孩',
+    '🏫 学校': 'school|学校,classroom|教室,teacher|老师,student|学生,desk|书桌,chair|椅子,blackboard|黑板,chalk|粉笔,book|书,notebook|笔记本,pen|钢笔,pencil|铅笔,eraser|橡皮,ruler|尺子,bag|书包,crayon|蜡笔,library|图书馆,playground|操场,computer|电脑,paper|纸,glue|胶水,scissors|剪刀,dictionary|字典,map|地图,homework|家庭作业',
+    '👕 衣服': 'shirt|衬衫,coat|外套,jacket|夹克,sweater|毛衣,dress|连衣裙,skirt|短裙,trousers|裤子,shorts|短裤,jeans|牛仔裤,sock|袜子,shoe|鞋子,boot|靴子,hat|帽子,cap|鸭舌帽,scarf|围巾,glove|手套,glasses|眼镜,watch|手表,ring|戒指',
+    '☀️ 天气自然': 'sun|太阳,moon|月亮,star|星星,sky|天空,cloud|云,rain|雨,snow|雪,wind|风,storm|暴风雨,thunder|雷,rainbow|彩虹,weather|天气,sunny|晴朗的,cloudy|多云的,rainy|下雨的,snowy|下雪的,windy|有风的,hot|热的,cold|冷的,warm|温暖的,cool|凉爽的,tree|树,flower|花,grass|草,leaf|树叶,mountain|山,river|河流,sea|海,lake|湖,forest|森林',
+    '🚗 交通': 'car|汽车,bus|公交车,bike|自行车,train|火车,plane|飞机,ship|轮船,boat|小船,taxi|出租车,subway|地铁,truck|卡车,road|马路,bridge|桥,station|车站,airport|机场,ticket|车票',
+    '🏃 动作': 'run|跑,jump|跳,swim|游泳,dance|跳舞,sing|唱歌,read|阅读,write|写,draw|画画,play|玩,walk|走,climb|爬,fly|飞,ride|骑,skate|滑冰,ski|滑雪,eat|吃,drink|喝,sleep|睡觉,sit|坐,stand|站,open|打开,close|关闭,look|看,listen|听,speak|说,smile|微笑,cry|哭,laugh|笑,study|学习,help|帮助',
+    '👮 职业': 'doctor|医生,nurse|护士,farmer|农民,worker|工人,driver|司机,police|警察,cook|厨师,singer|歌手,dancer|舞者,writer|作家,artist|画家,pilot|飞行员,soldier|士兵,scientist|科学家,engineer|工程师',
+    '🕐 时间': 'morning|早晨,afternoon|下午,evening|傍晚,night|夜晚,today|今天,tomorrow|明天,yesterday|昨天,week|周,month|月,year|年,spring|春天,summer|夏天,autumn|秋天,winter|冬天,Monday|星期一,Tuesday|星期二,Wednesday|星期三,Thursday|星期四,Friday|星期五,Saturday|星期六,Sunday|星期日,January|一月,February|二月,March|三月,April|四月,May|五月,June|六月,July|七月,August|八月,September|九月,October|十月,November|十一月,December|十二月',
+    '📍 地点': 'home|家,park|公园,zoo|动物园,shop|商店,market|市场,hospital|医院,cinema|电影院,museum|博物馆,restaurant|餐厅,bank|银行,hotel|旅馆,garden|花园,farm|农场,city|城市',
+    '✨ 形容词': 'big|大的,small|小的,long|长的,short|短的,tall|高的,fat|胖的,thin|瘦的,old|年老的,young|年轻的,new|新的,happy|开心的,sad|伤心的,angry|生气的,tired|累的,hungry|饿的,thirsty|渴的,good|好的,bad|坏的,nice|美好的,beautiful|美丽的,ugly|丑陋的,fast|快的,slow|慢的,high|高的,low|低的,strong|强壮的,weak|虚弱的,clean|干净的,dirty|脏的,easy|容易的,hard|困难的,right|对的,wrong|错的,funny|有趣的,quiet|安静的,loud|响亮的',
+    '🎯 常用动词': 'be|是,have|有,do|做,go|去,come|来,get|得到,make|制作,take|拿,give|给,see|看见,watch|观看,hear|听见,talk|谈话,say|说,tell|告诉,ask|询问,answer|回答,know|知道,think|思考,want|想要,like|喜欢,love|爱,need|需要,work|工作,learn|学习,buy|买,sell|卖,begin|开始,finish|完成,find|找到,lose|丢失,keep|保持,put|放,turn|转,bring|带来,send|发送,meet|遇见,leave|离开,stay|停留,wait|等待,try|尝试,forget|忘记,remember|记得,understand|理解'
+  };
+
+  const BUILTIN = [];
+  const BUILTIN_MAP = {};
+  Object.entries(WORD_BANK).forEach(([cat, str]) => {
+    str.split(',').forEach(pair => {
+      const parts = pair.split('|');
+      if(parts.length < 2) return;
+      const en = parts[0].trim();
+      const zh = parts[1].trim();
+      if(!en || !zh) return;
+      const key = en.toLowerCase();
+      if(BUILTIN_MAP[key]) return;
+      const w = { en, zh, cat, key };
+      BUILTIN.push(w);
+      BUILTIN_MAP[key] = w;
+    });
+  });
+  const CATEGORIES = Object.keys(WORD_BANK);
+
+  /* ===================== 培养路径 ===================== */
+  const EVOLUTION = [
+    { need: 0,    emoji:'🥚', name:'彩虹马蛋',    size:88,  glow:'#ffe0b2', desc:'里面好像有彩虹在流动…' },
+    { need: 30,   emoji:'🐴', name:'初生小马',    size:98,  glow:'#ffe8c2', desc:'刚刚来到世界的小马驹' },
+    { need: 100,  emoji:'🦄', name:'阳光小马',    size:110, glow:'#fff0b3', desc:'鬃毛闪着阳光的颜色' },
+    { need: 250,  emoji:'🦄', name:'彩虹小马',    size:122, glow:'#ffc2e8', desc:'身上开始出现彩虹纹路' },
+    { need: 500,  emoji:'🦄', name:'彩虹飞马',    size:136, glow:'#c2e8ff', desc:'长出了小小的翅膀' },
+    { need: 900,  emoji:'🦄', name:'星光天马',    size:150, glow:'#e0d0ff', desc:'能在星空中自由飞翔' },
+    { need: 1500, emoji:'🦄', name:'独角兽',      size:164, glow:'#ffd6ff', desc:'独角蕴含着神奇的力量' },
+    { need: 2400, emoji:'🦄', name:'彩虹独角兽',  size:178, glow:'#b3f0ff', desc:'彩虹与魔法的完美结合' },
+    { need: 3800, emoji:'🦄', name:'神圣天马',    size:192, glow:'#fff0a8', desc:'散发着神圣的光辉' },
+    { need: 6000, emoji:'🦄', name:'传说彩虹神马',size:210, glow:'#ffb3d9', desc:'传说中的存在，彩虹的化身' }
+  ];
+
+  /* ===================== 存档相关 ===================== */
+  const SAVE_KEY = 'rainbow_horse_pet_v3';        // 主 KEY（保持不变，兼容现有数据）
+  const LEGACY_KEYS = ['rainbow_horse_pet_v2','rainbow_horse_pet_v1'];
+  const SAVE_VERSION = 4;
+
+  let state = {
+    growth: 0, hunger: 100, mood: 100, bond: 0,
+    food: 3, coins: 10, streak: 0, bestStreak: 0, stage: 0,
+    progress: {}, custom: [], lastTick: Date.now(), lastPet: 0,
+    savedAt: 0, saveVersion: SAVE_VERSION
+  };
+
+  let session = null;
+  let setupCount = 0;
+  let evolveShowing = false;
+  let lastSaveAt = 0;
+
+  const $ = id => document.getElementById(id);
+  const petEmoji   = $('petEmoji');
+  const petName    = $('petName');
+  const petDesc    = $('petDesc');
+  const petBubble  = $('petBubble');
+  const petGlow    = $('petGlow');
+  const petRainbow = $('petRainbow');
+  const growthFill = $('growthFill');
+  const growNow    = $('growNow');
+  const growTarget = $('growTarget');
+  const hungerFill = $('hungerFill');
+  const hungerNum  = $('hungerNum');
+  const moodFill   = $('moodFill');
+  const moodNum    = $('moodNum');
+  const bondFill   = $('bondFill');
+  const bondNum    = $('bondNum');
+  const growthNum  = $('growthNum');
+  const foodNum    = $('foodNum');
+  const coinNum    = $('coinNum');
+  const saveStatusEl = $('saveStatus');
+
+  const btnLearn   = $('btnLearn');
+  const btnFeed    = $('btnFeed');
+  const btnPlay    = $('btnPlay');
+  const btnBank    = $('btnBank');
+
+  const setupOverlay    = $('setupOverlay');
+  const countGrid       = $('countGrid');
+  const setupTotal      = $('setupTotal');
+  const setupMastered   = $('setupMastered');
+  const setupStreak     = $('setupStreak');
+  const setupHunger     = $('setupHunger');
+  const btnCloseSetup   = $('btnCloseSetup');
+  const btnStartSession = $('btnStartSession');
+
+  const quizOverlay  = $('quizOverlay');
+  const qType        = $('qType');
+  const qStreak      = $('qStreak');
+  const quizContent  = $('quizContent');
+  const qFeedback    = $('qFeedback');
+  const btnCloseQuiz = $('btnCloseQuiz');
+  const progCur      = $('progCur');
+  const progTotal    = $('progTotal');
+  const progRight    = $('progRight');
+  const progWrong    = $('progWrong');
+  const progFill     = $('progFill');
+
+  const summaryOverlay = $('summaryOverlay');
+  const sumEmoji       = $('sumEmoji');
+  const sumTitle       = $('sumTitle');
+  const sumSub         = $('sumSub');
+  const sumCorrect     = $('sumCorrect');
+  const sumWrong       = $('sumWrong');
+  const sumAcc         = $('sumAcc');
+  const sumStreak      = $('sumStreak');
+  const sumMastered    = $('sumMastered');
+  const sumGrowth      = $('sumGrowth');
+  const sumFood        = $('sumFood');
+  const sumCoin        = $('sumCoin');
+  const sumBreakdown   = $('sumBreakdown');
+  const penaltyBox     = $('penaltyBox');
+  const penaltyText    = $('penaltyText');
+  const penaltyValue   = $('penaltyValue');
+  const btnClaim       = $('btnClaim');
+
+  const evolveOverlay = $('evolveOverlay');
+  const evolvePet     = $('evolvePet');
+  const evolveName    = $('evolveName');
+  const evolveDesc    = $('evolveDesc');
+  const btnEvolveOk   = $('btnEvolveOk');
+
+  const bankOverlay   = $('bankOverlay');
+  const bankTabs      = $('bankTabs');
+  const bankList      = $('bankList');
+  const btnCloseBank  = $('btnCloseBank');
+  const btnAddWord    = $('btnAddWord');
+
+  const addOverlay    = $('addOverlay');
+  const btnCloseAdd   = $('btnCloseAdd');
+  const inEn          = $('inEn');
+  const inZh          = $('inZh');
+  const catSelect     = $('catSelect');
+  const btnSaveWord   = $('btnSaveWord');
+
+  /* ===================== 工具 ===================== */
+  function shuffle(a){
+    const arr = a.slice();
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+    return arr;
+  }
+  const clamp = (v,min,max)=> Math.max(min, Math.min(max, v));
+
+  function toast(msg, danger){
+    const t = document.createElement('div');
+    t.className = 'toast' + (danger ? ' danger' : '');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(()=> t.classList.add('show'));
+    setTimeout(()=>{
+      t.classList.remove('show');
+      setTimeout(()=> t.remove(), 320);
+    }, 2200);
+  }
+
+  function bubble(text, dur){
+    petBubble.textContent = text;
+    petBubble.classList.add('show');
+    clearTimeout(bubble._t);
+    bubble._t = setTimeout(()=> petBubble.classList.remove('show'), dur || 1800);
+  }
+
+  function floatReward(text, x, y){
+    const el = document.createElement('div');
+    el.className = 'float-reward';
+    el.textContent = text;
+    el.style.left = (x || window.innerWidth/2) + 'px';
+    el.style.top  = (y || 220) + 'px';
+    document.body.appendChild(el);
+    setTimeout(()=> el.remove(), 1500);
+  }
+
+  function bumpRes(el){
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  /* ===================== 存档核心（强化版） ===================== */
+  function save(){
+    try{
+      state.savedAt = Date.now();
+      state.saveVersion = SAVE_VERSION;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      lastSaveAt = Date.now();
+      updateSaveStatus();
+      return true;
+    }catch(e){
+      console.warn('[存档失败]', e);
+      if(saveStatusEl){
+        saveStatusEl.textContent = '⚠️ 保存失败，请检查浏览器设置';
+        saveStatusEl.classList.add('error');
+      }
+      return false;
+    }
+  }
+
+  function load(){
+    try{
+      let raw = localStorage.getItem(SAVE_KEY);
+      let fromLegacy = false;
+
+      // 兼容旧版本
+      if(!raw){
+        for(const k of LEGACY_KEYS){
+          const legacy = localStorage.getItem(k);
+          if(legacy){ raw = legacy; fromLegacy = true; break; }
+        }
+      }
+
+      if(!raw) return null;
+      const d = JSON.parse(raw);
+      if(!d || typeof d !== 'object') return null;
+      d.__fromLegacy = fromLegacy;
+      return d;
+    }catch(e){
+      console.warn('[读取存档失败]', e);
+      return null;
+    }
+  }
+
+  function updateSaveStatus(){
+    if(!saveStatusEl) return;
+    if(!lastSaveAt){ saveStatusEl.textContent = '💾 数据已自动保存'; return; }
+    const diff = Date.now() - lastSaveAt;
+    if(diff < 5000){
+      saveStatusEl.textContent = '💾 已保存';
+    }else if(diff < 60000){
+      saveStatusEl.textContent = '💾 刚刚保存';
+    }else{
+      const m = Math.floor(diff / 60000);
+      if(m < 60) saveStatusEl.textContent = '💾 ' + m + ' 分钟前保存';
+      else{
+        const h = Math.floor(m / 60);
+        saveStatusEl.textContent = '💾 ' + h + ' 小时前保存';
+      }
+    }
+  }
+  setInterval(updateSaveStatus, 8000);
+
+  // 页面隐藏/关闭时立即保存
+  window.addEventListener('beforeunload', function(){ save(); });
+  window.addEventListener('pagehide', function(){ save(); });
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){
+      save();
+    }else{
+      state.lastTick = Date.now();
+      render();
+    }
+  });
+
+  /* ===================== 音效 ===================== */
+  let actx = null;
+  function tone(freq, dur, type, vol){
+    try{
+      if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      if(actx.state === 'suspended') actx.resume();
+      const o = actx.createOscillator();
+      const g = actx.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      const v = vol || 0.07;
+      g.gain.setValueAtTime(v, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start();
+      o.stop(actx.currentTime + dur);
+    }catch(e){}
+  }
+  const sfxGood = ()=>{ tone(660,.12,'sine'); setTimeout(()=>tone(880,.16,'sine'),90); setTimeout(()=>tone(1180,.22,'sine'),190); };
+  const sfxBad  = ()=>{ tone(240,.2,'triangle',.05); setTimeout(()=>tone(170,.28,'triangle',.05),110); };
+  const sfxLevel= ()=>{ [523,659,784,1047,1319].forEach((f,i)=> setTimeout(()=>tone(f,.26,'sine',.09), i*100)); };
+  const sfxReward=()=>{ [659,784,988,1319].forEach((f,i)=> setTimeout(()=>tone(f,.26,'triangle',.09), i*110)); };
+  const sfxPenalty=()=>{ tone(200,.4,'sawtooth',.06); setTimeout(()=>tone(140,.5,'sawtooth',.05),180); };
+
+  /* ===================== 语音 ===================== */
+  let cachedVoice = null;
+  function pickVoice(){
+    if(cachedVoice) return cachedVoice;
+    try{
+      const vs = window.speechSynthesis.getVoices() || [];
+      cachedVoice =
+        vs.find(v => /en-US/i.test(v.lang) && /female|samantha|zira|google us/i.test(v.name)) ||
+        vs.find(v => /en-US/i.test(v.lang)) ||
+        vs.find(v => /^en/i.test(v.lang)) || null;
+    }catch(e){ cachedVoice = null; }
+    return cachedVoice;
+  }
+  if(window.speechSynthesis){
+    window.speechSynthesis.onvoiceschanged = ()=>{ cachedVoice = null; pickVoice(); };
+  }
+  let lastSpeakAt = 0;
+  function speak(text, rate){
+    if(!window.speechSynthesis) return;
+    const now = Date.now();
+    if(now - lastSpeakAt < 240) return;
+    lastSpeakAt = now;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      u.rate = rate || 0.78;
+      u.pitch = 1.1;
+      u.volume = 1;
+      const v = pickVoice();
+      if(v) u.voice = v;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  /* ===================== 词库 ===================== */
+  function getAllWords(){
+    const list = BUILTIN.slice();
+    state.custom.forEach(c => {
+      const key = c.en.toLowerCase();
+      if(BUILTIN_MAP[key]) return;
+      if(list.some(w => w.key === key)) return;
+      list.push({ en: c.en, zh: c.zh, cat: c.cat || '⭐ 自定义', key });
+    });
+    return list;
+  }
+  function getProgress(key){
+    if(!state.progress[key]) state.progress[key] = { m:0, last:0, c:0, w:0 };
+    return state.progress[key];
+  }
+  function getMastery(key){
+    return state.progress[key] ? state.progress[key].m : 0;
+  }
+  function getMasteredCount(){
+    const all = getAllWords();
+    let n = 0;
+    all.forEach(w => { if(getMastery(w.key) >= 3) n++; });
+    return n;
+  }
+
+  function getStageIndex(growth){
+    let idx = 0;
+    for(let i=0;i<EVOLUTION.length;i++){
+      if(growth >= EVOLUTION[i].need) idx = i;
+    }
+    return idx;
+  }
+
+  /* ===================== 渲染 ===================== */
+  let lastRenderedStage = -1;
+
+  function render(){
+    const stageIdx = getStageIndex(state.growth);
+    const prevStage = lastRenderedStage;
+
+    if(prevStage === -1){
+      lastRenderedStage = stageIdx;
+      state.stage = stageIdx;
+    }else if(stageIdx > prevStage){
+      lastRenderedStage = stageIdx;
+      state.stage = stageIdx;
+      setTimeout(()=> showEvolve(), 400);
+    }else if(stageIdx < prevStage){
+      lastRenderedStage = stageIdx;
+      state.stage = stageIdx;
+      setTimeout(()=> notifyDegrade(prevStage, stageIdx), 400);
+    }else{
+      state.stage = stageIdx;
+    }
+
+    const st = EVOLUTION[stageIdx];
+    petEmoji.textContent = st.emoji;
+    petEmoji.style.fontSize = st.size + 'px';
+    petName.textContent = st.name;
+    petDesc.textContent = st.desc;
+    petGlow.style.background = `radial-gradient(circle, ${st.glow}, transparent 70%)`;
+    petEmoji.classList.toggle('hungry', state.hunger < 30);
+    petRainbow.classList.toggle('on', stageIdx >= 4);
+
+    const nextStage = EVOLUTION[stageIdx + 1];
+    let pct, nowVal, targetVal;
+    if(nextStage){
+      const base = st.need;
+      const span = nextStage.need - base;
+      nowVal = state.growth - base;
+      targetVal = span;
+      pct = clamp(nowVal / span * 100, 0, 100);
+    }else{
+      nowVal = state.growth;
+      targetVal = state.growth;
+      pct = 100;
+    }
+    growthFill.style.width = pct + '%';
+    growNow.textContent = Math.max(0, nowVal);
+    growTarget.textContent = targetVal;
+
+    hungerFill.style.width = state.hunger + '%';
+    hungerFill.classList.toggle('low', state.hunger < 30);
+    hungerNum.textContent = Math.round(state.hunger) + '%';
+
+    moodFill.style.width = state.mood + '%';
+    moodFill.classList.toggle('low', state.mood < 30);
+    moodNum.textContent = Math.round(state.mood) + '%';
+
+    bondFill.style.width = state.bond + '%';
+    bondNum.textContent = Math.round(state.bond) + '%';
+
+    growthNum.textContent = state.growth;
+    foodNum.textContent = state.food;
+    coinNum.textContent = state.coins;
+
+    btnFeed.disabled = state.food < 1;
+    btnPlay.disabled = state.coins < 5;
+  }
+
+  function tick(){
+    const now = Date.now();
+    const elapsed = (now - state.lastTick) / 1000;
+    state.lastTick = now;
+    if(elapsed > 0 && elapsed < 60){
+      state.hunger = clamp(state.hunger - elapsed / 20, 0, 100);
+      state.mood = clamp(state.mood - elapsed / 25, 0, 100);
+    }
+    render();
+  }
+  setInterval(tick, 1000);
+
+  /* ===================== 互动 ===================== */
+  btnFeed.addEventListener('click', function(){
+    if(state.food < 1){ toast('没有食物啦，去学习赚食物吧！'); return; }
+    state.food--;
+    state.hunger = clamp(state.hunger + 25, 0, 100);
+    state.bond = clamp(state.bond + 3, 0, 100);
+    petEmoji.classList.remove('happy');
+    void petEmoji.offsetWidth;
+    petEmoji.classList.add('happy');
+    bubble('好好吃！谢谢你~', 1600);
+    tone(720,.12,'sine'); setTimeout(()=>tone(980,.16,'sine'),110);
+    save(); render();
+  });
+
+  btnPlay.addEventListener('click', function(){
+    if(state.coins < 5){ toast('金币不够啦，去学习赚金币吧！'); return; }
+    state.coins -= 5;
+    state.mood = clamp(state.mood + 25, 0, 100);
+    state.bond = clamp(state.bond + 5, 0, 100);
+    petEmoji.classList.remove('happy');
+    void petEmoji.offsetWidth;
+    petEmoji.classList.add('happy');
+    bubble('好开心呀！再玩一次！', 1600);
+    tone(600,.1,'sine'); setTimeout(()=>tone(800,.1,'sine'),80); setTimeout(()=>tone(1000,.18,'sine'),160);
+    save(); render();
+  });
+
+  petEmoji.addEventListener('click', function(){
+    const now = Date.now();
+    if(now - state.lastPet < 30000){
+      const remain = Math.ceil((30000 - (now - state.lastPet)) / 1000);
+      bubble('让我休息一下～' + remain + '秒', 1200);
+      return;
+    }
+    state.lastPet = now;
+    state.mood = clamp(state.mood + 8, 0, 100);
+    state.bond = clamp(state.bond + 3, 0, 100);
+    petEmoji.classList.remove('happy');
+    void petEmoji.offsetWidth;
+    petEmoji.classList.add('happy');
+    const lines = ['嘿嘿~好舒服', '我在长大哦！', '陪我学习吧！', '你真好~', '我要变成彩虹神马！'];
+    bubble(lines[Math.floor(Math.random()*lines.length)], 1400);
+    tone(700,.1,'sine'); setTimeout(()=>tone(900,.14,'sine'),90);
+    save(); render();
+  });
+
+  /* ===================== 学习设置 ===================== */
+  function openSetup(){
+    const all = getAllWords();
+    const total = all.length;
+    if(total === 0){ toast('词库是空的，先去添加单词吧！'); return; }
+    setupTotal.textContent = total;
+    setupMastered.textContent = getMasteredCount();
+    setupStreak.textContent = state.streak;
+    setupHunger.textContent = Math.round(state.hunger) + '%';
+    setupHunger.style.color = state.hunger < 30 ? '#dc2626' : '#8b5cf6';
+    setupCount = 0;
+    renderCountOptions(total);
+    setupOverlay.classList.remove('hidden');
+    requestAnimationFrame(()=> setupOverlay.classList.add('show'));
+  }
+  function closeSetup(){
+    setupOverlay.classList.remove('show');
+    setTimeout(()=> setupOverlay.classList.add('hidden'), 250);
+  }
+  btnLearn.addEventListener('click', openSetup);
+  btnCloseSetup.addEventListener('click', closeSetup);
+
+  function renderCountOptions(total){
+    const presets = [
+      { n:5,  label:'轻松', rec:false },
+      { n:10, label:'推荐', rec:true },
+      { n:15, label:'挑战', rec:false },
+      { n:20, label:'学霸', rec:false },
+      { n:30, label:'疯狂', rec:false }
+    ];
+    const options = presets.filter(p => p.n <= total);
+    if(!options.some(p => p.n === total) && total < 30){
+      options.push({ n:total, label:'全部', rec:false });
+    }
+    if(options.length === 0) options.push({ n:total, label:'全部', rec:true });
+
+    countGrid.innerHTML = '';
+    options.forEach(opt => {
+      const b = document.createElement('button');
+      b.className = 'count-btn';
+      b.dataset.n = opt.n;
+      b.innerHTML =
+        (opt.rec ? '<span class="rec">推荐</span>' : '') +
+        '<span class="n">' + opt.n + '</span>' +
+        '<span class="lbl">个单词 · ' + opt.label + '</span>';
+      b.addEventListener('click', ()=>{
+        setupCount = opt.n;
+        countGrid.querySelectorAll('.count-btn').forEach(x => x.classList.remove('selected'));
+        b.classList.add('selected');
+        btnStartSession.disabled = false;
+      });
+      countGrid.appendChild(b);
+    });
+
+    const def = options.find(o => o.rec) || options[0];
+    if(def){
+      const target = countGrid.querySelector('.count-btn[data-n="' + def.n + '"]');
+      if(target){
+        setupCount = def.n;
+        target.classList.add('selected');
+        btnStartSession.disabled = false;
+      }
+    }
+  }
+
+  btnStartSession.addEventListener('click', function(){
+    if(!setupCount) return;
+    closeSetup();
+    setTimeout(()=> startSession(setupCount), 260);
+  });
+
+  /* ===================== 智能加权抽词 ===================== */
+  /*
+   * 核心：掌握度越高，权重越低，出现概率越小。
+   * 同时：
+   *  - 全新单词权重 ×1.6（优先学新词）
+   *  - 掌握度≥3 且长时间未复习（防止遗忘）的权重回升
+   *  - 错误率高的词权重提高（优先巩固）
+   */
+  function pickSessionWords(count){
+    const all = getAllWords();
+    if(all.length === 0) return [];
+
+    const now = Date.now();
+    // 掌握度 0-5 对应的基础权重
+    const baseWeights = [100, 70, 45, 25, 12, 4];
+
+    const pool = all.map(w => {
+      const p = getProgress(w.key);
+      const m = clamp(p.m, 0, 5);
+      let weight = baseWeights[m];
+
+      // 全新单词：额外加权
+      if(!p.last) weight *= 1.6;
+
+      // 掌握度较高但很久没复习 → 权重回升（防止长期遗忘）
+      if(p.last && m >= 3){
+        const days = (now - p.last) / (1000 * 60 * 60 * 24);
+        weight *= (1 + Math.min(days / 7, 3));
+      }
+
+      // 错误率高的词：加权（优先巩固）
+      const total = (p.c || 0) + (p.w || 0);
+      if(total > 0){
+        const errRate = p.w / total;
+        weight *= (1 + errRate);
+      }
+
+      return { word: w, weight: Math.max(0.5, weight) };
+    });
+
+    // 加权不放回抽取
+    const picked = [];
+    const remaining = pool.slice();
+
+    while(picked.length < count && remaining.length > 0){
+      const totalWeight = remaining.reduce((s, x) => s + x.weight, 0);
+      if(totalWeight <= 0){
+        // 兜底：直接随机取
+        const idx = Math.floor(Math.random() * remaining.length);
+        picked.push(remaining[idx].word);
+        remaining.splice(idx, 1);
+        continue;
+      }
+      let r = Math.random() * totalWeight;
+      let chosen = 0;
+      for(let i = 0; i < remaining.length; i++){
+        r -= remaining[i].weight;
+        if(r <= 0){ chosen = i; break; }
+      }
+      picked.push(remaining[chosen].word);
+      remaining.splice(chosen, 1);
+    }
+
+    return picked;
+  }
+
+  /* ===================== 学习会话 ===================== */
+  function startSession(count){
+    const words = pickSessionWords(count);
+    if(words.length === 0){ toast('词库是空的！'); return; }
+    session = {
+      words: words, index: 0, correct: 0, wrong: 0,
+      curStreak: 0, maxStreak: 0,
+      startMastered: getMasteredCount(),
+      answered: false, finished: false
+    };
+    progTotal.textContent = words.length;
+    progCur.textContent = 1;
+    progRight.textContent = 0;
+    progWrong.textContent = 0;
+    progFill.style.width = '0%';
+    qFeedback.textContent = '';
+    qFeedback.className = 'q-feedback';
+    quizOverlay.classList.remove('hidden');
+    requestAnimationFrame(()=> quizOverlay.classList.add('show'));
+    nextQuestion();
+  }
+
+  function closeQuiz(skipConfirm){
+    if(!skipConfirm && session && !session.finished && session.index > 0){
+      if(!confirm('本轮还没学完，确定要退出吗？已答对的掌握度会保留，但不会发放本轮奖励。')) return;
+    }
+    quizOverlay.classList.remove('show');
+    setTimeout(()=> quizOverlay.classList.add('hidden'), 250);
+    session = null;
+    save(); render();
+  }
+  btnCloseQuiz.addEventListener('click', ()=> closeQuiz(false));
+
+  function nextQuestion(){
+    if(!session || session.finished) return;
+    if(session.index >= session.words.length){ finishSession(); return; }
+    session.answered = false;
+    qFeedback.textContent = '';
+    qFeedback.className = 'q-feedback';
+
+    const word = session.words[session.index];
+    const mastery = clamp(getMastery(word.key), 0, 5);
+    let type;
+    if(mastery <= 0)       type = 'en2zh';
+    else if(mastery === 1) type = 'zh2en';
+    else if(mastery === 2) type = 'listen';
+    else                   type = Math.random() < 0.5 ? 'spell-zh' : 'spell-listen';
+    if(!window.speechSynthesis && (type === 'listen' || type === 'spell-listen')){
+      type = 'en2zh';
+    }
+    session.type = type;
+    progCur.textContent = session.index + 1;
+    progRight.textContent = session.correct;
+    progWrong.textContent = session.wrong;
+    progFill.style.width = (session.index / session.words.length * 100) + '%';
+    qStreak.textContent = session.curStreak > 1 ? ('🔥 ' + session.curStreak + ' 连击') : '';
+
+    if(type === 'en2zh')            buildEn2zh(word);
+    else if(type === 'zh2en')       buildZh2en(word);
+    else if(type === 'listen')      buildListen(word);
+    else if(type === 'spell-zh')    buildSpellZh(word);
+    else if(type === 'spell-listen')buildSpellListen(word);
+  }
+
+  function makeDistractors(word, field, count){
+    const all = getAllWords();
+    const sameCat = all.filter(w => w.cat === word.cat && w.key !== word.key);
+    const others = all.filter(w => w.cat !== word.cat && w.key !== word.key);
+    const pool = [];
+    const seen = new Set([word[field]]);
+    shuffle(sameCat).forEach(w => {
+      if(pool.length >= count) return;
+      if(!seen.has(w[field])){ seen.add(w[field]); pool.push(w[field]); }
+    });
+    shuffle(others).forEach(w => {
+      if(pool.length >= count) return;
+      if(!seen.has(w[field])){ seen.add(w[field]); pool.push(w[field]); }
+    });
+    return pool.slice(0, count);
+  }
+
+  function buildEn2zh(word){
+    qType.textContent = '👁 看词选义';
+    const distractors = makeDistractors(word, 'zh', 3);
+    const opts = shuffle([word.zh, ...distractors]);
+    quizContent.innerHTML =
+      '<div class="q-word">' + escapeHtml(word.en) + '</div>' +
+      '<div class="q-sub">它是什么意思呢？</div>' +
+      '<div class="q-options" id="qOpts"></div>';
+    const wrap = $('qOpts');
+    opts.forEach((text, i)=>{
+      const b = document.createElement('button');
+      b.className = 'q-opt';
+      b.innerHTML = '<span class="key">' + (i+1) + '</span>' + escapeHtml(text);
+      b.dataset.value = text;
+      b.addEventListener('click', ()=> answerChoice(b, text === word.zh));
+      wrap.appendChild(b);
+    });
+    speak(word.en);
+  }
+
+  function buildZh2en(word){
+    qType.textContent = '🔤 看义选词';
+    const distractors = makeDistractors(word, 'en', 3);
+    const opts = shuffle([word.en, ...distractors]);
+    quizContent.innerHTML =
+      '<div class="q-word small">' + escapeHtml(word.zh) + '</div>' +
+      '<div class="q-sub">对应的英文是哪个？</div>' +
+      '<div class="q-options" id="qOpts"></div>';
+    const wrap = $('qOpts');
+    opts.forEach((text, i)=>{
+      const b = document.createElement('button');
+      b.className = 'q-opt spell';
+      b.innerHTML = '<span class="key">' + (i+1) + '</span>' + escapeHtml(text);
+      b.dataset.value = text;
+      b.addEventListener('click', ()=> answerChoice(b, text === word.en));
+      wrap.appendChild(b);
+    });
+  }
+
+  function buildListen(word){
+    qType.textContent = '👂 听音选词';
+    const distractors = makeDistractors(word, 'en', 3);
+    const opts = shuffle([word.en, ...distractors]);
+    quizContent.innerHTML =
+      '<div class="q-hint">点击按钮听发音，选出正确的单词</div>' +
+      '<button class="q-play" id="qPlay">🔊</button>' +
+      '<div class="q-options" id="qOpts"></div>';
+    $('qPlay').addEventListener('click', ()=> speak(word.en));
+    const wrap = $('qOpts');
+    opts.forEach((text, i)=>{
+      const b = document.createElement('button');
+      b.className = 'q-opt spell';
+      b.innerHTML = '<span class="key">' + (i+1) + '</span>' + escapeHtml(text);
+      b.dataset.value = text;
+      b.addEventListener('click', ()=> answerChoice(b, text === word.en));
+      wrap.appendChild(b);
+    });
+    setTimeout(()=> speak(word.en, 0.72), 380);
+  }
+
+  function buildSpellZh(word){
+    qType.textContent = '✏️ 看义拼写';
+    quizContent.innerHTML =
+      '<div class="q-word small">' + escapeHtml(word.zh) + '</div>' +
+      '<div class="q-sub">拼出对应的英文单词</div>' +
+      '<input class="q-input" id="qInput" placeholder="输入英文…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">' +
+      '<button class="btn-primary" id="qSubmit">提交答案</button>';
+    const input = $('qInput');
+    const submit = ()=>{
+      const v = input.value.trim().toLowerCase();
+      if(!v) return;
+      answerSpell(v === word.key, input.value.trim());
+    };
+    $('qSubmit').addEventListener('click', submit);
+    input.addEventListener('keydown', e=>{ if(e.key === 'Enter') submit(); });
+    setTimeout(()=> input.focus(), 320);
+  }
+
+  function buildSpellListen(word){
+    qType.textContent = '🎧 听音拼写';
+    quizContent.innerHTML =
+      '<div class="q-hint">听发音，拼出这个单词</div>' +
+      '<button class="q-play" id="qPlay">🔊</button>' +
+      '<input class="q-input" id="qInput" placeholder="输入听到的单词…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">' +
+      '<button class="btn-primary" id="qSubmit">提交答案</button>';
+    $('qPlay').addEventListener('click', ()=> speak(word.en, 0.72));
+    const input = $('qInput');
+    const submit = ()=>{
+      const v = input.value.trim().toLowerCase();
+      if(!v) return;
+      answerSpell(v === word.key, input.value.trim());
+    };
+    $('qSubmit').addEventListener('click', submit);
+    input.addEventListener('keydown', e=>{ if(e.key === 'Enter') submit(); });
+    setTimeout(()=>{ speak(word.en, 0.72); input.focus(); }, 380);
+  }
+
+  function answerChoice(btn, isCorrect){
+    if(!session || session.answered) return;
+    session.answered = true;
+    const word = session.words[session.index];
+    const wrap = $('qOpts');
+    if(wrap){
+      wrap.querySelectorAll('.q-opt').forEach(b=>{
+        b.disabled = true;
+        if(b.dataset.value === (session.type === 'en2zh' ? word.zh : word.en)) b.classList.add('correct');
+      });
+      if(!isCorrect) btn.classList.add('wrong');
+    }
+    resolveAnswer(isCorrect, word);
+  }
+
+  function answerSpell(isCorrect, userInput){
+    if(!session || session.answered) return;
+    session.answered = true;
+    const input = $('qInput');
+    if(input) input.disabled = true;
+    const submit = $('qSubmit');
+    if(submit) submit.disabled = true;
+    resolveAnswer(isCorrect, session.words[session.index], userInput);
+  }
+
+  function resolveAnswer(isCorrect, word, userInput){
+    const p = getProgress(word.key);
+    p.last = Date.now();
+
+    if(isCorrect){
+      sfxGood();
+      session.correct++;
+      session.curStreak++;
+      if(session.curStreak > session.maxStreak) session.maxStreak = session.curStreak;
+      state.streak++;
+      if(state.streak > state.bestStreak) state.bestStreak = state.streak;
+      p.m = clamp(p.m + 1, 0, 5);
+      p.c++;
+      progRight.textContent = session.correct;
+      const tip = session.curStreak >= 3 ? (' · 🔥' + session.curStreak + ' 连击') : '';
+      qFeedback.className = 'q-feedback ok';
+      qFeedback.innerHTML =
+        '✅ 答对啦！' + tip +
+        '<span class="small">' + escapeHtml(word.en) + ' = ' + escapeHtml(word.zh) + '</span>';
+      qStreak.textContent = session.curStreak > 1 ? ('🔥 ' + session.curStreak + ' 连击') : '';
+      session.index++;
+      save();    // 每题立即保存
+      setTimeout(()=>{ if(session) nextQuestion(); }, 900);
+    }else{
+      sfxBad();
+      session.wrong++;
+      session.curStreak = 0;
+      state.streak = 0;
+      p.m = clamp(p.m - 1, 0, 5);
+      p.w++;
+      progWrong.textContent = session.wrong;
+      const shown = userInput ? ('你的答案：<span style="color:#fca5a5">' + escapeHtml(userInput) + '</span><br>') : '';
+      qFeedback.className = 'q-feedback bad';
+      qFeedback.innerHTML =
+        '❌ 再想想~<br>' + shown +
+        '正确答案：<span class="ans">' + escapeHtml(word.en) + '</span>' +
+        '<span class="small">' + escapeHtml(word.en) + ' = ' + escapeHtml(word.zh) + '</span>';
+      qStreak.textContent = '';
+      setTimeout(()=> speak(word.en, 0.72), 300);
+      session.index++;
+      save();    // 每题立即保存
+      setTimeout(()=>{ if(session) nextQuestion(); }, 2000);
+    }
+    const done = session.correct + session.wrong;
+    progFill.style.width = (done / session.words.length * 100) + '%';
+  }
+
+  window.addEventListener('keydown', function(e){
+    if(!session || session.answered) return;
+    if(session.type === 'en2zh' || session.type === 'zh2en' || session.type === 'listen'){
+      const n = parseInt(e.key, 10);
+      if(n >= 1 && n <= 4){
+        const btns = quizContent.querySelectorAll('.q-opt');
+        if(btns[n-1] && !btns[n-1].disabled) btns[n-1].click();
+      }
+    }
+  });
+
+  /* ===================== 结算 ===================== */
+  function getEfficiency(){
+    let eff = 1;
+    const factors = [];
+    if(state.hunger < 30){ eff *= 0.5; factors.push('饱食不足'); }
+    if(state.mood < 30){ eff *= 0.5; factors.push('心情低落'); }
+    return { eff, factors };
+  }
+
+  function calcRewards(){
+    const correct = session.correct;
+    const wrong = session.wrong;
+    const total = correct + wrong;
+    const acc = total > 0 ? correct / total : 0;
+    const wrongRate = total > 0 ? wrong / total : 0;
+
+    const growthBase = correct * 5;
+    let accBonus = 0, accLabel = '';
+    if(acc >= 0.9){ accBonus = 30; accLabel = '完美表现'; }
+    else if(acc >= 0.7){ accBonus = 15; accLabel = '表现出色'; }
+    else if(acc >= 0.5){ accBonus = 5; accLabel = '继续加油'; }
+    else if(total > 0){ accLabel = '下次会更好'; }
+
+    const streakBonus = session.maxStreak * 2;
+    const newMastered = getMasteredCount() - session.startMastered;
+    const masteredBonus = newMastered * 10;
+    const { eff, factors } = getEfficiency();
+
+    const grossGrowth = Math.round((growthBase + accBonus + streakBonus + masteredBonus) * eff);
+    const food = Math.round((correct + (acc >= 0.9 ? 5 : acc >= 0.7 ? 2 : 0)) * eff);
+    const coin = Math.round((correct * 3 + (acc >= 0.9 ? 15 : acc >= 0.7 ? 8 : 0)) * eff);
+
+    let penalty = 0;
+    let penaltyReason = '';
+    if(total >= 5 && wrongRate > 0.5){
+      penalty = Math.round((wrongRate - 0.5) * 200);
+      penaltyReason = '错误率 ' + Math.round(wrongRate * 100) + '% 过高';
+    }
+
+    return {
+      grossGrowth, food, coin, accuracy: acc, wrongRate, accLabel,
+      growthBase, accBonus, streakBonus, masteredBonus, newMastered,
+      eff, factors, penalty, penaltyReason
+    };
+  }
+
+  function finishSession(){
+    if(!session || session.finished) return;
+    session.finished = true;
+    const r = calcRewards();
+
+    sumCorrect.textContent = session.correct;
+    sumWrong.textContent = session.wrong;
+    sumAcc.textContent = Math.round(r.accuracy * 100) + '%';
+    sumStreak.textContent = session.maxStreak;
+    sumMastered.textContent = r.newMastered;
+    sumGrowth.textContent = r.grossGrowth;
+    sumFood.textContent = r.food;
+    sumCoin.textContent = r.coin;
+
+    let emoji = '🎉', title = '本轮完成！', sub = '小白马又长大了一点～';
+    if(r.penalty > 0){
+      emoji = '😰'; title = '小心！答错太多'; sub = '小白马好像变小了一点点…';
+    }else if(r.accuracy >= 0.9 && session.correct >= 5){
+      emoji = '🏆'; title = '太厉害啦！'; sub = '小白马开心得转圈圈～';
+    }else if(r.accuracy >= 0.7){
+      emoji = '🌟'; title = '表现很棒！'; sub = '小白马离进化更近一步';
+    }else if(r.accuracy >= 0.5){
+      emoji = '😊'; title = '继续加油！'; sub = '小白马陪着你慢慢进步';
+    }else{
+      emoji = '💪'; title = '再来一轮吧'; sub = '小白马相信你下次会更好';
+    }
+    if(r.eff < 1) sub += '（状态不佳，奖励打折）';
+    sumEmoji.textContent = emoji;
+    sumTitle.textContent = title;
+    sumSub.textContent = sub;
+
+    const lines = [];
+    lines.push('<div class="line"><span>答对 ' + session.correct + ' 题 × 5</span><span>+⭐' + r.growthBase + '</span></div>');
+    if(r.accBonus > 0) lines.push('<div class="line"><span>' + r.accLabel + '</span><span>+⭐' + r.accBonus + '</span></div>');
+    if(r.streakBonus > 0) lines.push('<div class="line"><span>最高连击 ' + session.maxStreak + ' × 2</span><span>+⭐' + r.streakBonus + '</span></div>');
+    if(r.masteredBonus > 0) lines.push('<div class="line"><span>新掌握 ' + r.newMastered + ' 个 × 10</span><span>+⭐' + r.masteredBonus + '</span></div>');
+    if(r.eff < 1){
+      lines.push('<div class="eff">⚠️ ' + r.factors.join(' · ') + ' → 奖励 ×' + r.eff.toFixed(2) + '</div>');
+    }
+    sumBreakdown.innerHTML = lines.join('');
+
+    if(r.penalty > 0){
+      penaltyBox.style.display = 'flex';
+      penaltyText.innerHTML = r.penaltyReason + '<small>本轮错误 ' + session.wrong + ' 题，答对 ' + session.correct + ' 题</small>';
+      penaltyValue.textContent = r.penalty;
+    }else{
+      penaltyBox.style.display = 'none';
+    }
+
+    quizOverlay.classList.remove('show');
+    setTimeout(()=>{
+      quizOverlay.classList.add('hidden');
+      summaryOverlay.classList.remove('hidden');
+      requestAnimationFrame(()=> summaryOverlay.classList.add('show'));
+      if(r.penalty > 0){ sfxPenalty(); } else { sfxReward(); }
+    }, 260);
+  }
+
+  btnClaim.addEventListener('click', function(){
+    if(!session) return;
+    const r = calcRewards();
+
+    const beforeGrowth = state.growth;
+    const rawNet = r.grossGrowth - r.penalty;
+    state.growth = Math.max(0, beforeGrowth + rawNet);
+    const actualChange = state.growth - beforeGrowth;
+
+    state.food += r.food;
+    state.coins += r.coin;
+    state.bond = clamp(state.bond + Math.min(10, session.correct), 0, 100);
+
+    bumpRes($('resGrowth'));
+    bumpRes($('resFood'));
+    bumpRes($('resCoin'));
+
+    const rewardText = (actualChange >= 0 ? '⭐+' : '⭐') + actualChange +
+                       ' 🍖+' + r.food + ' 🪙+' + r.coin;
+    floatReward(rewardText, window.innerWidth / 2, 220);
+
+    summaryOverlay.classList.remove('show');
+    setTimeout(()=> summaryOverlay.classList.add('hidden'), 260);
+
+    const hadPenalty = r.penalty > 0;
+    session = null;
+    save();   // 结算立即保存
+    render();
+
+    setTimeout(()=>{
+      petEmoji.classList.remove('happy', 'sad');
+      void petEmoji.offsetWidth;
+      if(hadPenalty){
+        petEmoji.classList.add('sad');
+        bubble('呜…我们下次认真一点好不好', 2600);
+        tone(300,.3,'triangle',.05); setTimeout(()=>tone(200,.4,'triangle',.05),180);
+      }else{
+        petEmoji.classList.add('happy');
+        const lines = ['吃得好饱！谢谢你~', '我变强了一点点！', '下次还要一起学哦', '嘿嘿，好开心~'];
+        bubble(lines[Math.floor(Math.random()*lines.length)], 2200);
+        tone(720,.12,'sine'); setTimeout(()=>tone(980,.16,'sine'),110);
+      }
+    }, 400);
+  });
+
+  /* ===================== 进化 / 退化 ===================== */
+  function showEvolve(){
+    if(evolveShowing){
+      closeEvolve();
+      setTimeout(()=> showEvolve(), 350);
+      return;
+    }
+    evolveShowing = true;
+    const st = EVOLUTION[state.stage];
+    evolvePet.textContent = st.emoji;
+    evolveName.textContent = st.name;
+    evolveDesc.textContent = st.desc;
+    evolveOverlay.classList.remove('hidden');
+    requestAnimationFrame(()=> evolveOverlay.classList.add('show'));
+    sfxLevel();
+    setTimeout(()=> speak('Wow! I evolved!'), 500);
+  }
+
+  function closeEvolve(){
+    if(!evolveShowing) return;
+    evolveShowing = false;
+    evolveOverlay.classList.remove('show');
+    setTimeout(()=> evolveOverlay.classList.add('hidden'), 300);
+  }
+
+  btnEvolveOk.addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    closeEvolve();
+    setTimeout(()=> bubble('我进化成' + EVOLUTION[state.stage].name + '啦！', 2200), 320);
+    save();
+  }, true);
+
+  evolveOverlay.addEventListener('click', function(e){
+    if(e.target === evolveOverlay) closeEvolve();
+  }, true);
+
+  window.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && evolveShowing) closeEvolve();
+  });
+
+  function notifyDegrade(prevStage, newStage){
+    const now = EVOLUTION[newStage];
+    toast('😢 小白马退化成了「' + now.name + '」', true);
+    bubble('呜…我变小了，我们继续加油吧！', 3000);
+    petEmoji.classList.remove('happy');
+    void petEmoji.offsetWidth;
+    petEmoji.classList.add('sad');
+    sfxPenalty();
+    save();
+  }
+
+  /* ===================== 词库 ===================== */
+  let currentTab = '__all__';
+  let currentAddCat = CATEGORIES[0];
+
+  function openBank(){
+    currentTab = '__all__';
+    renderBankTabs();
+    renderBankList();
+    bankOverlay.classList.remove('hidden');
+    requestAnimationFrame(()=> bankOverlay.classList.add('show'));
+  }
+  function closeBank(){
+    bankOverlay.classList.remove('show');
+    setTimeout(()=> bankOverlay.classList.add('hidden'), 250);
+  }
+  btnBank.addEventListener('click', openBank);
+  btnCloseBank.addEventListener('click', closeBank);
+
+  function getCategories(){
+    const cats = CATEGORIES.slice();
+    if(state.custom.length){
+      const set = new Set(cats);
+      state.custom.forEach(c => {
+        if(c.cat && !set.has(c.cat)){ set.add(c.cat); cats.push(c.cat); }
+      });
+    }
+    return cats;
+  }
+
+  function renderBankTabs(){
+    const cats = getCategories();
+    bankTabs.innerHTML = '';
+    const tabs = [{key:'__all__', label:'📚 全部'}].concat(cats.map(c => ({key:c, label:c})));
+    tabs.forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'bank-tab' + (currentTab === t.key ? ' active' : '');
+      b.textContent = t.label;
+      b.addEventListener('click', ()=>{
+        currentTab = t.key;
+        renderBankTabs();
+        renderBankList();
+      });
+      bankTabs.appendChild(b);
+    });
+  }
+
+  function renderBankList(){
+    const all = getAllWords();
+    const list = currentTab === '__all__' ? all : all.filter(w => w.cat === currentTab);
+    bankList.innerHTML = '';
+    if(list.length === 0){
+      bankList.innerHTML = '<div class="empty-tip">这个词库还没有单词</div>';
+      return;
+    }
+    list.forEach(w => {
+      const m = clamp(getMastery(w.key), 0, 5);
+      const el = document.createElement('div');
+      el.className = 'bank-item';
+      let starHtml = '';
+      for(let i=0;i<5;i++){
+        let cls = 'star';
+        if(i < m) cls += (m >= 5 ? ' full' : ' on');
+        starHtml += '<span class="' + cls + '"></span>';
+      }
+      el.innerHTML =
+        '<div class="bank-en">' + escapeHtml(w.en) + '</div>' +
+        '<div class="bank-zh">' + escapeHtml(w.zh) + '</div>' +
+        '<div class="stars">' + starHtml + '</div>';
+      bankList.appendChild(el);
+    });
+  }
+
+  /* ===================== 添加单词 ===================== */
+  function openAdd(){
+    inEn.value = '';
+    inZh.value = '';
+    currentAddCat = CATEGORIES[0];
+    renderCatSelect();
+    addOverlay.classList.remove('hidden');
+    requestAnimationFrame(()=> addOverlay.classList.add('show'));
+    setTimeout(()=> inEn.focus(), 320);
+  }
+  function closeAdd(){
+    addOverlay.classList.remove('show');
+    setTimeout(()=> addOverlay.classList.add('hidden'), 250);
+  }
+  btnAddWord.addEventListener('click', openAdd);
+  btnCloseAdd.addEventListener('click', closeAdd);
+
+  function renderCatSelect(){
+    const cats = getCategories();
+    catSelect.innerHTML = '';
+    cats.forEach(c => {
+      const b = document.createElement('button');
+      b.className = 'cat-chip' + (currentAddCat === c ? ' active' : '');
+      b.textContent = c;
+      b.addEventListener('click', ()=>{
+        currentAddCat = c;
+        renderCatSelect();
+      });
+      catSelect.appendChild(b);
+    });
+  }
+
+  btnSaveWord.addEventListener('click', function(){
+    const en = inEn.value.trim();
+    const zh = inZh.value.trim();
+    if(!en || !zh){ toast('请填写完整的英文和中文'); return; }
+    if(!/^[a-zA-Z][a-zA-Z\s\-']*$/.test(en)){
+      toast('英文格式不正确');
+      return;
+    }
+    const key = en.toLowerCase();
+    if(BUILTIN_MAP[key] || state.custom.some(c => c.en.toLowerCase() === key)){
+      toast('这个单词已经在词库里了');
+      return;
+    }
+    state.custom.push({ en, zh, cat: currentAddCat });
+    save();
+    closeAdd();
+    toast('✅ 已添加：' + en);
+    if(bankOverlay.classList.contains('show')){
+      renderBankTabs();
+      renderBankList();
+    }
+    render();
+  });
+
+  /* ===================== 初始化 ===================== */
+  function init(){
+    const saved = load();
+    const isNewUser = !saved;
+
+    if(saved){
+      state.growth = Math.max(0, saved.growth || 0);
+      state.hunger = clamp(saved.hunger == null ? 100 : saved.hunger, 0, 100);
+      state.mood = clamp(saved.mood == null ? 100 : saved.mood, 0, 100);
+      state.bond = clamp(saved.bond || 0, 0, 100);
+      state.food = Math.max(0, saved.food || 0);
+      state.coins = Math.max(0, saved.coins || 0);
+      state.streak = saved.streak || 0;
+      state.bestStreak = saved.bestStreak || 0;
+      state.progress = saved.progress || {};
+      state.custom = Array.isArray(saved.custom) ? saved.custom : [];
+      state.lastPet = saved.lastPet || 0;
+      state.lastTick = Date.now();
+      state.savedAt = saved.savedAt || 0;
+      state.saveVersion = saved.saveVersion || 0;
+
+      // 若从旧版本迁移过来，立即写回主 KEY
+      if(saved.__fromLegacy || (saved.saveVersion || 0) < SAVE_VERSION){
+        save();
+      }
+    }else{
+      state.food = 3;
+      state.coins = 10;
+      state.lastTick = Date.now();
+      // 首次写入，保证之后不会丢
+      save();
+    }
+
+    if(window.speechSynthesis){
+      try{ window.speechSynthesis.getVoices(); }catch(e){}
+    }
+
+    const stageIdx = getStageIndex(state.growth);
+    lastRenderedStage = stageIdx;
+    state.stage = stageIdx;
+
+    render();
+    updateSaveStatus();
+
+    if(isNewUser){
+      setTimeout(()=> bubble('你好呀！我是你的彩虹小白马~', 3200), 700);
+    }else if(state.hunger < 30){
+      setTimeout(()=> bubble('我有点饿了…', 2200), 600);
+    }else if(state.mood < 30){
+      setTimeout(()=> bubble('陪我玩一会儿嘛…', 2200), 600);
+    }else{
+      setTimeout(()=> bubble('今天也一起加油吧！', 2000), 600);
+    }
+  }
+
+  init();
+
+  /* 定时保存（更频繁） */
+  setInterval(save, 3000);
+
+})();
+</script>
+</body>
+</html>
